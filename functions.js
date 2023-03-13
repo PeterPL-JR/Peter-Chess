@@ -12,6 +12,13 @@ function getMouseX(event) {
 function getMouseY(event) {
     return event.clientY - canvas.offsetTop;
 }
+// Function getting moving piece position
+function getChoosenPiecePosition() {
+    return {
+        x: mouseX - offsetX,
+        y: mouseY - offsetY
+    }
+}
 
 // Function finding a piece with position(x, y)
 function getPiece(fieldX, fieldY) {
@@ -36,4 +43,9 @@ function getFieldPosition(canvasX, canvasY) {
 // Function getting position on canvas from field index
 function getBoardPos(pos) {
     return pos * FIELD_SIZE;
+}
+
+// Function getting an object of position(x, y);
+function getPos(x, y) {
+    return {x, y};
 }
