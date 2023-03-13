@@ -1,0 +1,14 @@
+:root {
+    --default: url("images/cursor_default.png"), auto;
+    --pointer: url("images/cursor_pointer.png"), auto;
+}
+
+body {
+    background-color: black;
+    margin-top: 60px;
+    text-align: center;
+    cursor: var(--default);
+}
+canvas {
+    background-color: #121212;
+}
