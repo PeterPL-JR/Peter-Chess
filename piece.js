@@ -66,12 +66,27 @@ class Piece {
     }
 
     move(x, y) {
-        this.x = x;
-        this.y = y;
-        this.alreadyMoved = true;
+        let move = this.moves.find(function(move) {
+            return move.x == x && move.y == y;
+        });
+        if(move) {
+            this.x = x;
+            this.y = y;
+            this.alreadyMoved = true;
+
+            if(move.toCapture) {
+                capturePiece(move.toCapture);
+            }
+        }
     }
     getMoves() {
         this.moves = [];
+    }
+    findCaptures() {
+        for(let move of this.moves) {
+            const piece = getPiece(move.x, move.y);
+            if(piece) move.toCapture = piece;
+        }
     }
 }
 
@@ -79,7 +94,6 @@ class Piece {
 class _Pawn extends Piece {
     constructor(index, colorIndex) {
         super((colorIndex == TYPE_LIGHT) ? LIGHT_PAWNS_X : DARK_PAWNS_X, index, _PAWN, colorIndex);
-        this.alreadyMoved = false;
     }
     getMoves() {
         super.getMoves();
@@ -87,15 +101,45 @@ class _Pawn extends Piece {
         const DIR_RIGHT = 1;
 
         const direction = (this.color == TYPE_LIGHT) ? DIR_RIGHT : DIR_LEFT;
-        this.moves.push(getPos(this.x + direction, this.y));
+        const firstMove = this.tryGetMove(this.x + direction, this.y, false);
+
+        if(firstMove && !this.alreadyMoved) {
+            this.tryGetMove(this.x + direction * 2, this.y, false);
+        }
+        this.findCaptures();
+    }
+    tryGetMove(x, y, canCapture) {
+        let movePosition = getPos(x, y);
+        movePosition.canCapture = canCapture;
+
+        if(!getPiece(x, y)) {
+            this.moves.push(movePosition);
+            return true;
+        }
+        return false;
+    }
+    findCaptures() {
+        super.findCaptures();
     }
 }
 
 // Function moving a piece & updated the others
 function movePiece(x, y, piece) {
+    if(!isPosValid(x, y)) {
+        return;
+    }
     piece.move(x, y);
 
     for(let otherPiece of pieces) {
         otherPiece.getMoves();
     }
+}
+
+// Functions capturing a piece & removing it from the array
+function capturePiece(piece) {
+    removePiece(piece);
+    capturedPieces.push(piece);
+}
+function removePiece(piece) {
+    pieces.splice(pieces.indexOf(piece), 1);
 }

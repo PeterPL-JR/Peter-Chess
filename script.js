@@ -47,7 +47,7 @@ function init() {
     canvas.onmousedown = function() {
         mouseClicked = true;
     }
-    canvas.onmouseup = canvas.onmouseleave = function() {
+    canvas.onmouseup = function() {
         mouseClicked = false;
         mouseUp();
     }
@@ -61,6 +61,15 @@ function init() {
         } else {
             mouseMovePiece();
         }
+    }
+
+    canvas.onmouseleave = function() {
+        mouseClicked = false;
+        choosenPiece = null;
+        selectedField = null;
+    }
+    canvas.oncontextmenu = function() {
+        return false;
     }
     
     initPieces();
@@ -123,10 +132,18 @@ function renderBoard() {
                 const pieceOnTheField = getPiece(selectedField.x, selectedField.y);
                 const isCapturedPiece = pieceOnTheField && pieceOnTheField.color != choosenPiece.color;
 
-                renderFieldSelected(x, y, isCapturedPiece ? SELECTED_CAPTURING : SELECTED_DEFAULT);
+                
+                let selectedColor = isCapturedPiece ? SELECTED_CAPTURING : SELECTED_DEFAULT;
+                if(getMove(x, y, choosenPiece) == null) {
+                    selectedColor = SELECTED_DEFAULT;
+                }
+                renderFieldSelected(x, y, selectedColor);
                 continue;
             }
             renderField(x, y, MODULO_X ? TYPE_LIGHT : TYPE_DARK);
+            if(choosenPiece && x == choosenPiece.x && y == choosenPiece.y) {
+                renderFieldCurrent(x, y);
+            }
         }
     }
     // Render pieces
@@ -175,11 +192,28 @@ function renderFieldSelected(x, y, selectedFieldType) {
     ctx.fillStyle = color;
     ctx.fillRect(INNER_X_POS, INNER_Y_POS, INNER_SQUARE_SIZE, INNER_SQUARE_SIZE);
 }
+function renderFieldCurrent(x, y, selectedFieldType) {
+    const CURRENT_POS_BORDER_WIDTH = BORDER_SIZE;
+    const CURRENT_POS_FIELD_SIZE = FIELD_SIZE - CURRENT_POS_BORDER_WIDTH;
+    const CURRENT_POS_COLOR = "#cb9b00";
+
+    const posX = x * FIELD_SIZE + CURRENT_POS_BORDER_WIDTH / 2;
+    const posY = y * FIELD_SIZE + CURRENT_POS_BORDER_WIDTH / 2;
+
+    ctx.strokeStyle = CURRENT_POS_COLOR;
+    ctx.lineWidth = CURRENT_POS_BORDER_WIDTH;
+
+    ctx.beginPath();
+    ctx.rect(posX, posY, CURRENT_POS_FIELD_SIZE, CURRENT_POS_FIELD_SIZE);
+    ctx.stroke();
+    ctx.closePath();
+}
+
+const MARKER_COLOR = "#00000055";
 
 // Render possible moves markers of a piece moving by player
 function renderPossibleMove(x, y) {
     const MARKER_RADIUS = FIELD_SIZE / 2 * 0.45;
-    const MARKER_COLOR = "#00000055";
 
     const CIRCLE_CENTER_X = x * FIELD_SIZE + FIELD_SIZE / 2;
     const CIRCLE_CENTER_Y = y * FIELD_SIZE + FIELD_SIZE / 2;
@@ -190,9 +224,25 @@ function renderPossibleMove(x, y) {
     ctx.fill();
     ctx.closePath();
 }
+function renderPossibleCapture(x, y) {
+    const MARKER_BORDER_WIDTH = 6;
+    const MARKER_RADIUS = FIELD_SIZE / 2 * 0.9 - MARKER_BORDER_WIDTH;
+
+    const CIRCLE_CENTER_X = x * FIELD_SIZE + FIELD_SIZE / 2;
+    const CIRCLE_CENTER_Y = y * FIELD_SIZE + FIELD_SIZE / 2;
+
+    ctx.strokeStyle = MARKER_COLOR;
+    ctx.lineWidth = MARKER_BORDER_WIDTH;
+
+    ctx.beginPath();
+    ctx.arc(CIRCLE_CENTER_X, CIRCLE_CENTER_Y, MARKER_RADIUS, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.closePath();
+}
 function renderAllPossibleMoves(piece) {
     for(let move of piece.moves) {
-        renderPossibleMove(move.x, move.y);
+        const renderFunction = (!move.toCapture) ? renderPossibleMove : renderPossibleCapture;
+        renderFunction(move.x, move.y);
     }
 }
 
