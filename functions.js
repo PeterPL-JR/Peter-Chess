@@ -21,9 +21,11 @@ function getChoosenPiecePosition() {
 }
 
 // Function finding a piece with position(x, y)
-function getPiece(fieldX, fieldY) {
+function getPiece(fieldX, fieldY, color=null) {
     for(let piece of pieces) {
-        if(piece.x == fieldX && piece.y == fieldY) {
+        const colorCondition = (color != null) ? (piece.color == color) : true;
+
+        if(piece.x == fieldX && piece.y == fieldY && colorCondition) {
             return piece;
         }
     }

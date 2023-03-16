@@ -22,6 +22,8 @@ let selectedField = null;
 let offsetX = -1;
 let offsetY = -1;
 
+let moves = [];
+
 // Colors
 const LIGHT_COLOR = "#e3c482";
 const LIGHT_BORDER_COLOR = "#a08a5b";
@@ -146,12 +148,17 @@ function renderBoard() {
             }
         }
     }
+
+    // Render possible moves
+    for(let piece of pieces) {
+        if(piece == choosenPiece) {
+            renderAllPossibleMoves(piece);
+        }
+    }
     // Render pieces
     for(let piece of pieces) {
         if(piece != choosenPiece) {
             piece.render();
-        } else {
-            renderAllPossibleMoves(piece);
         }
     }
 }
@@ -192,7 +199,7 @@ function renderFieldSelected(x, y, selectedFieldType) {
     ctx.fillStyle = color;
     ctx.fillRect(INNER_X_POS, INNER_Y_POS, INNER_SQUARE_SIZE, INNER_SQUARE_SIZE);
 }
-function renderFieldCurrent(x, y, selectedFieldType) {
+function renderFieldCurrent(x, y) {
     const CURRENT_POS_BORDER_WIDTH = BORDER_SIZE;
     const CURRENT_POS_FIELD_SIZE = FIELD_SIZE - CURRENT_POS_BORDER_WIDTH;
     const CURRENT_POS_COLOR = "#cb9b00";
@@ -252,4 +259,8 @@ function updateChoosenPiece() {
 function renderChoosenPiece() {
     const position = getChoosenPiecePosition();
     choosenPiece.renderOnCanvas(position.x, position.y);
+}
+
+function lastMove() {
+    return moves[moves.length - 1];
 }

@@ -77,7 +77,9 @@ class Piece {
             if(move.toCapture) {
                 capturePiece(move.toCapture);
             }
+            return true;
         }
+        return false;
     }
     getMoves() {
         this.moves = [];
@@ -85,29 +87,44 @@ class Piece {
     findCaptures() {
         for(let move of this.moves) {
             const piece = getPiece(move.x, move.y);
-            if(piece) move.toCapture = piece;
+
+            if(piece && piece.color != this.color) {
+                move.toCapture = piece;
+            }
         }
     }
 }
+
+const DIR_LEFT = -1;
+const DIR_RIGHT = 1;
 
 // Subclasses of pieces
 class _Pawn extends Piece {
     constructor(index, colorIndex) {
         super((colorIndex == TYPE_LIGHT) ? LIGHT_PAWNS_X : DARK_PAWNS_X, index, _PAWN, colorIndex);
+        this.direction = (this.color == TYPE_LIGHT) ? DIR_RIGHT : DIR_LEFT;
+    }
+
+    move(x, y) {
+        let pawnMoved = super.move(x, y);
+        const LAST_PAWN_FIELD = (this.color == TYPE_LIGHT) ? FIELDS_IN_ROW - 1 : 0;
+
+        if(pawnMoved && this.x == LAST_PAWN_FIELD) {
+            this.getQueen();
+        }
     }
     getMoves() {
         super.getMoves();
-        const DIR_LEFT = -1;
-        const DIR_RIGHT = 1;
-
-        const direction = (this.color == TYPE_LIGHT) ? DIR_RIGHT : DIR_LEFT;
-        const firstMove = this.tryGetMove(this.x + direction, this.y, false);
-
+        
+        const firstMove = this.tryGetMove(this.x + this.direction, this.y, false);
         if(firstMove && !this.alreadyMoved) {
-            this.tryGetMove(this.x + direction * 2, this.y, false);
+            this.tryGetMove(this.x + this.direction * 2, this.y, false);
         }
         this.findCaptures();
     }
+    getQueen() {
+    }
+
     tryGetMove(x, y, canCapture) {
         let movePosition = getPos(x, y);
         movePosition.canCapture = canCapture;
@@ -120,6 +137,23 @@ class _Pawn extends Piece {
     }
     findCaptures() {
         super.findCaptures();
+
+        this.findPawnCapture(-1);
+        this.findPawnCapture(1);
+
+        this.findPawnEnPassanteCapture();
+    }
+
+    findPawnCapture(captureDirectionY) {
+        const move = getPos(this.x + this.direction, this.y + captureDirectionY);
+        let pieceToCapture = getPiece(move.x, move.y);
+
+        if(pieceToCapture && pieceToCapture.color != this.color) {
+            move.toCapture = pieceToCapture;
+            this.moves.push(move);
+        }
+    }
+    findPawnEnPassanteCapture() {
     }
 }
 
@@ -128,8 +162,17 @@ function movePiece(x, y, piece) {
     if(!isPosValid(x, y)) {
         return;
     }
-    piece.move(x, y);
+    let move = {
+        piece: piece,
+        oldPosision: getPos(piece.x, piece.y),
+        newPosition: getPos(x, y)
+    };
+    moves.push(move);
 
+    piece.move(x, y);
+    updateMoves();
+}
+function updateMoves() {
     for(let otherPiece of pieces) {
         otherPiece.getMoves();
     }
