@@ -59,6 +59,16 @@ function getBoardPos(pos) {
 function getPos(x, y) {
     return {x, y};
 }
-function isPosValid(x, y) {
+// Function checking if a position is not out of bounds
+function posValid(x, y) {
     return !(x < 0 || x >= FIELDS_IN_ROW || y < 0 || y >= FIELDS_IN_ROW);
+}
+// Function checking if a position equals an another position(x, y)
+function posEquals(pos, x, y) {
+    return pos.x == x && pos.y == y;
+}
+
+// Function returning type of an object
+function getType(object) {
+    return object.constructor.name;
 }

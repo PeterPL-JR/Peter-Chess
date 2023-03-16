@@ -12,7 +12,8 @@ const _KING = 5;
 const pieces = [];
 const capturedPieces = [];
 
-const BEGIN_PIECES_ORDER = [_ROOK, _KNIGHT, _BISHOP, _KING, _QUEEN, _BISHOP, _KNIGHT, _ROOK];
+const BEGIN_CHESS_ORDER = [_ROOK, _KNIGHT, _BISHOP, _KING, _QUEEN, _BISHOP, _KNIGHT, _ROOK];
+const CLASSES_OF_PIECES = [];
 
 // Positions of pieces
 const LIGHT_PIECES_X = 0;
@@ -23,6 +24,14 @@ const DARK_PAWNS_X = FIELDS_IN_ROW - 2;
 
 // Init pieces
 function initPieces() {
+    CLASSES_OF_PIECES[_Pawn] = _Pawn;
+    
+    CLASSES_OF_PIECES[_ROOK] = _Rook;
+    CLASSES_OF_PIECES[_KNIGHT] = _Knight;
+    CLASSES_OF_PIECES[_BISHOP] = _Bishop;
+
+    CLASSES_OF_PIECES[_QUEEN] = _Queen;
+    CLASSES_OF_PIECES[_KING] = _King;
 
     // Pawns
     for(let i = 0; i < FIELDS_IN_ROW; i++) {
@@ -31,10 +40,11 @@ function initPieces() {
     }
 
     // Other pieces
-    for(let i = 0; i < BEGIN_PIECES_ORDER.length; i++) {
-        const pieceType = BEGIN_PIECES_ORDER[i];
-        pieces.push(new Piece(LIGHT_PIECES_X, i, pieceType, TYPE_LIGHT));
-        pieces.push(new Piece(DARK_PIECES_X, i, pieceType, TYPE_DARK));
+    for(let i = 0; i < FIELDS_IN_ROW; i++) {
+        const pieceType = BEGIN_CHESS_ORDER[i];
+
+        pieces.push(new CLASSES_OF_PIECES[pieceType](LIGHT_PIECES_X, i, TYPE_LIGHT));
+        pieces.push(new CLASSES_OF_PIECES[pieceType](DARK_PIECES_X, i, TYPE_DARK));
     }
 
     for(let piece of pieces) {
@@ -51,6 +61,7 @@ class Piece {
         this.x = beginX;
         this.y = beginY;
         this.alreadyMoved = false;
+        this.lastMove = null;
 
         this.moves = [];
     }
@@ -67,22 +78,38 @@ class Piece {
 
     move(x, y) {
         let move = this.moves.find(function(move) {
-            return move.x == x && move.y == y;
+            return posEquals(move, x, y);
         });
         if(move) {
+            this.lastMove = {
+                piece: this,
+                oldPosision: getPos(this.x, this.y),
+                newPosition: getPos(x, y)
+            };
+
             this.x = x;
             this.y = y;
             this.alreadyMoved = true;
 
             if(move.toCapture) {
+                this.lastMove.captured = move.toCapture;
                 capturePiece(move.toCapture);
             }
+            addAction(this.lastMove);
             return true;
         }
         return false;
     }
     getMoves() {
         this.moves = [];
+    }
+    tryGetMove(x, y) {
+        const piece = getPiece(x, y, this.color);
+        if(posValid(x, y) && !piece) {
+            this.moves.push(getPos(x, y));
+            return true;
+        }
+        return false;
     }
     findCaptures() {
         for(let move of this.moves) {
@@ -100,8 +127,8 @@ const DIR_RIGHT = 1;
 
 // Subclasses of pieces
 class _Pawn extends Piece {
-    constructor(index, colorIndex) {
-        super((colorIndex == TYPE_LIGHT) ? LIGHT_PAWNS_X : DARK_PAWNS_X, index, _PAWN, colorIndex);
+    constructor(indexY, colorIndex) {
+        super((colorIndex == TYPE_LIGHT) ? LIGHT_PAWNS_X : DARK_PAWNS_X, indexY, _PAWN, colorIndex);
         this.direction = (this.color == TYPE_LIGHT) ? DIR_RIGHT : DIR_LEFT;
     }
 
@@ -116,18 +143,19 @@ class _Pawn extends Piece {
     getMoves() {
         super.getMoves();
         
-        const firstMove = this.tryGetMove(this.x + this.direction, this.y, false);
+        const firstMove = this.tryGetMove(this.x + this.direction, this.y);
         if(firstMove && !this.alreadyMoved) {
-            this.tryGetMove(this.x + this.direction * 2, this.y, false);
+            this.tryGetMove(this.x + this.direction * 2, this.y);
         }
         this.findCaptures();
     }
     getQueen() {
+        removePiece(this);
+        pieces.push(new _Queen(this.x, this.y, this.color));
     }
 
-    tryGetMove(x, y, canCapture) {
+    tryGetMove(x, y) {
         let movePosition = getPos(x, y);
-        movePosition.canCapture = canCapture;
 
         if(!getPiece(x, y)) {
             this.moves.push(movePosition);
@@ -141,7 +169,8 @@ class _Pawn extends Piece {
         this.findPawnCapture(-1);
         this.findPawnCapture(1);
 
-        this.findPawnEnPassanteCapture();
+        this.findPawnEnPassanteCapture(-1);
+        this.findPawnEnPassanteCapture(1);
     }
 
     findPawnCapture(captureDirectionY) {
@@ -153,21 +182,78 @@ class _Pawn extends Piece {
             this.moves.push(move);
         }
     }
-    findPawnEnPassanteCapture() {
+    findPawnEnPassanteCapture(captureDirectionY) {
+        let piece = getPiece(this.x, this.y + captureDirectionY);
+
+        if(piece && getType(piece) == "_Pawn" && piece.color != this.color) {
+            let lastMove = piece.lastMove;
+
+            if(lastMove && piece == lastAction().piece) {
+                let requiredX = lastMove.newPosition.x - piece.direction * 2;
+                let requiredY = piece.y;
+
+                if(posEquals(lastMove.oldPosision, requiredX, requiredY)) {
+                    let moveX = this.x + this.direction;
+                    let moveY = this.y + captureDirectionY;
+
+                    let enPassanteMove = getPos(moveX, moveY);
+                    enPassanteMove.toCapture = piece;
+                    enPassanteMove.enPassante = true;
+
+                    this.moves.push(enPassanteMove);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}
+
+class _Rook extends Piece {
+    constructor(x, y, colorIndex) {
+        super(x, y, _ROOK, colorIndex);
+    }
+}
+class _Knight extends Piece {
+    constructor(x, y, colorIndex) {
+        super(x, y, _KNIGHT, colorIndex);
+    }
+}
+class _Bishop extends Piece {
+    constructor(x, y, colorIndex) {
+        super(x, y, _BISHOP, colorIndex);
+    }
+}
+
+class _King extends Piece {
+    constructor(x, y, colorIndex) {
+        super(x, y, _KING, colorIndex);
+    }
+    getMoves() {
+        super.getMoves();
+        for(let x = -1; x <= 1; x++) {
+            for(let y = -1; y <= 1; y++) {
+                if(x == 0 && y == 0) continue;
+                const xPos = this.x + x;
+                const yPos = this.y + y;
+
+                this.tryGetMove(xPos, yPos);
+            }
+        }
+        this.findCaptures();
+    }
+}
+class _Queen extends Piece {
+    constructor(x, y, colorIndex) {
+        super(x, y, _QUEEN, colorIndex);
     }
 }
 
 // Function moving a piece & updated the others
 function movePiece(x, y, piece) {
-    if(!isPosValid(x, y)) {
+    if(!posValid(x, y)) {
         return;
     }
-    let move = {
-        piece: piece,
-        oldPosision: getPos(piece.x, piece.y),
-        newPosition: getPos(x, y)
-    };
-    moves.push(move);
 
     piece.move(x, y);
     updateMoves();

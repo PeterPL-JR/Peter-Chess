@@ -22,7 +22,7 @@ let selectedField = null;
 let offsetX = -1;
 let offsetY = -1;
 
-let moves = [];
+let actions = [];
 
 // Colors
 const LIGHT_COLOR = "#e3c482";
@@ -130,20 +130,21 @@ function renderBoard() {
             const MODULO_Y = y % 2 == 0 ? TYPE_LIGHT : TYPE_DARK;
             const MODULO_X = x % 2 != MODULO_Y;
 
-            if(selectedField != null && selectedField.x == x && selectedField.y == y) {
+            if(selectedField != null && posEquals(selectedField, x, y)) {
                 const pieceOnTheField = getPiece(selectedField.x, selectedField.y);
                 const isCapturedPiece = pieceOnTheField && pieceOnTheField.color != choosenPiece.color;
-
                 
                 let selectedColor = isCapturedPiece ? SELECTED_CAPTURING : SELECTED_DEFAULT;
-                if(getMove(x, y, choosenPiece) == null) {
-                    selectedColor = SELECTED_DEFAULT;
-                }
+                let move = getMove(x, y, choosenPiece);
+                
+                if(!move) selectedColor = SELECTED_DEFAULT;
+                else if(move.enPassante) selectedColor = SELECTED_CAPTURING;
+
                 renderFieldSelected(x, y, selectedColor);
                 continue;
             }
             renderField(x, y, MODULO_X ? TYPE_LIGHT : TYPE_DARK);
-            if(choosenPiece && x == choosenPiece.x && y == choosenPiece.y) {
+            if(choosenPiece && posEquals(choosenPiece, x, y)) {
                 renderFieldCurrent(x, y);
             }
         }
@@ -261,6 +262,9 @@ function renderChoosenPiece() {
     choosenPiece.renderOnCanvas(position.x, position.y);
 }
 
-function lastMove() {
-    return moves[moves.length - 1];
+function addAction(action) {
+    actions.push(action);
+}
+function lastAction() {
+    return actions[actions.length - 1];
 }
