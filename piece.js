@@ -104,8 +104,9 @@ class Piece {
         this.moves = [];
     }
     tryGetMove(x, y) {
-        const piece = getPiece(x, y, this.color);
-        if(posValid(x, y) && !piece) {
+        const thisColorPiece = getPiece(x, y, this.color);
+
+        if(posValid(x, y) && !thisColorPiece && !isKing(x, y)) {
             this.moves.push(getPos(x, y));
             return true;
         }
@@ -120,7 +121,22 @@ class Piece {
             }
         }
     }
+    isAttacked() {
+        let thisX = this.x;
+        let thisY = this.y;
+
+        for(let otherPiece of pieces) {
+            if(otherPiece.color != this.color) {
+                let capture = otherPiece.moves.find(function(move) {
+                    return posEquals(move, thisX, thisY);
+                });
+            }
+        }
+    }
 }
+
+const HORIZONTAL = 0;
+const VERTICAL = 1;
 
 const DIR_LEFT = -1;
 const DIR_RIGHT = 1;
@@ -179,7 +195,7 @@ class _Pawn extends Piece {
 
         if(pieceToCapture && pieceToCapture.color != this.color) {
             move.toCapture = pieceToCapture;
-            this.moves.push(move);
+            this.tryGetPawnCapture(move);
         }
     }
     findPawnEnPassanteCapture(captureDirectionY) {
@@ -200,12 +216,17 @@ class _Pawn extends Piece {
                     enPassanteMove.toCapture = piece;
                     enPassanteMove.enPassante = true;
 
-                    this.moves.push(enPassanteMove);
+                    this.tryGetPawnCapture(enPassanteMove);
                     return true;
                 }
             }
         }
         return false;
+    }
+    tryGetPawnCapture(move) {
+        if(!isKing(move.x, move.y)) {
+            this.moves.push(move);
+        }
     }
 }
 
@@ -213,15 +234,47 @@ class _Rook extends Piece {
     constructor(x, y, colorIndex) {
         super(x, y, _ROOK, colorIndex);
     }
+    getMoves() {
+        super.getMoves();
+
+        getAllStraightMoves(this);
+        this.findCaptures();
+    }
 }
 class _Knight extends Piece {
     constructor(x, y, colorIndex) {
         super(x, y, _KNIGHT, colorIndex);
     }
+    getMoves() {
+        super.getMoves();
+
+        this.getKnightMove(1, HORIZONTAL);
+        this.getKnightMove(-1, HORIZONTAL);
+
+        this.getKnightMove(1, VERTICAL);
+        this.getKnightMove(-1, VERTICAL);
+       
+        this.findCaptures();
+    }
+    getKnightMove(direction, moveType) {
+        let dirs = getDirections(direction, moveType);
+        
+        let straightX = this.x + dirs.x * 2;
+        let straightY = this.y + dirs.y * 2;
+
+        this.tryGetMove(straightX + dirs.y, straightY + dirs.x);
+        this.tryGetMove(straightX - dirs.y, straightY - dirs.x);
+    }
 }
 class _Bishop extends Piece {
     constructor(x, y, colorIndex) {
         super(x, y, _BISHOP, colorIndex);
+    }
+    getMoves() {
+        super.getMoves();
+
+        getAllDiagonalMoves(this);
+        this.findCaptures();
     }
 }
 
@@ -247,6 +300,71 @@ class _Queen extends Piece {
     constructor(x, y, colorIndex) {
         super(x, y, _QUEEN, colorIndex);
     }
+    getMoves() {
+        super.getMoves();
+
+        getAllStraightMoves(this);
+        getAllDiagonalMoves(this);
+        this.findCaptures();
+    }
+}
+
+// Straight (horizontally/vertically) moves
+function getStraightMoves(piece, direction, moveType) {
+    let dirs = getDirections(direction, moveType);
+
+    for(let i = 0; i < FIELDS_IN_ROW; i++) {
+        let posX = piece.x + dirs.x * i;
+        let posY = piece.y + dirs.y * i;
+
+        if(posEquals(piece, posX, posY)) continue;
+        if(!tryAddMove(piece, posX, posY)) {
+            return;
+        }
+    }
+}
+// Diagonal moves
+function getDiagonalMoves(piece, directionX, directionY) {
+    for(let x = 0; x < FIELDS_IN_ROW; x++) {
+        for(let y = 0; y < FIELDS_IN_ROW; y++) {
+            if(x == y) {
+                let posX = piece.x + x * directionX;
+                let posY = piece.y + y * directionY;
+
+                if(posEquals(piece, posX, posY)) continue;
+                if(!tryAddMove(piece, posX, posY)) {
+                    return;
+                }
+            }
+        }
+    }
+}
+
+function getAllStraightMoves(piece) {
+    getStraightMoves(piece, 1, HORIZONTAL);
+    getStraightMoves(piece, -1, HORIZONTAL);
+
+    getStraightMoves(piece, 1, VERTICAL);
+    getStraightMoves(piece, -1, VERTICAL);
+}
+function getAllDiagonalMoves(piece) {
+    getDiagonalMoves(piece, 1,1);
+    getDiagonalMoves(piece, 1,-1);
+
+    getDiagonalMoves(piece, -1,1);
+    getDiagonalMoves(piece, -1,-1);
+}
+
+function tryAddMove(piece, posX, posY) {
+    let pieceOnPosition = getPiece(posX, posY);
+
+    if(!posValid(posX, posY) || (pieceOnPosition && pieceOnPosition.color == piece.color)) return false;
+    piece.tryGetMove(posX, posY);
+    
+    if(pieceOnPosition && pieceOnPosition.color != piece.color) {
+        return false;
+    }
+    return true;
 }
 
 // Function moving a piece & updated the others

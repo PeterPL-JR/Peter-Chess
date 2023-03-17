@@ -1,10 +1,3 @@
-// Function loading images
-function loadImage(path) {
-    const img = document.createElement("img");
-    img.src = "images/" + path;
-    return img;
-}
-
 // Functions getting mouse position on the canvas
 function getMouseX(event) {
     return event.clientX - canvas.offsetLeft;
@@ -39,6 +32,12 @@ function getMove(fieldX, fieldY, piece) {
     }
     return null;
 }
+
+function isKing(x, y) {
+    let piece = getPiece(x, y);
+    return piece && piece.type == _KING;
+}
+
 // Function checking if a field with position(x, y) is taken
 function isFieldTaken(fieldX, fieldY) {
     return getPiece(fieldX, fieldY) ? true : false; 
@@ -58,6 +57,14 @@ function getBoardPos(pos) {
 // Function getting an object of position(x, y);
 function getPos(x, y) {
     return {x, y};
+}
+
+// Function getting direction(x, y) based on moveType(HORIZONTAL/VERTICAL) & direction(1/-1) 
+function getDirections(dir, moveType) {
+    return {
+        x: moveType == HORIZONTAL ? dir : 0,
+        y: moveType == HORIZONTAL ? 0 : dir
+    } 
 }
 // Function checking if a position is not out of bounds
 function posValid(x, y) {
