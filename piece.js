@@ -64,6 +64,7 @@ class Piece {
         this.lastMove = null;
 
         this.moves = [];
+        this.attacked = [];
     }
     render() {
         this.renderOnCanvas(getBoardPos(this.x), getBoardPos(this.y));
@@ -77,9 +78,8 @@ class Piece {
     }
 
     move(x, y) {
-        let move = this.moves.find(function(move) {
-            return posEquals(move, x, y);
-        });
+        let move = getMove(x, y, this);
+
         if(move) {
             this.lastMove = {
                 piece: this,
@@ -102,13 +102,19 @@ class Piece {
     }
     getMoves() {
         this.moves = [];
+        this.attacked = [];
     }
     tryGetMove(x, y) {
         const thisColorPiece = getPiece(x, y, this.color);
 
-        if(posValid(x, y) && !thisColorPiece && !isKing(x, y)) {
-            this.moves.push(getPos(x, y));
-            return true;
+        if(posValid(x, y)) {
+            let position = getPos(x, y);
+            this.attacked.push(position);
+
+            if(!thisColorPiece && !isKing(x, y)) {
+                this.moves.push(position);
+                return true;
+            }
         }
         return false;
     }
@@ -122,16 +128,7 @@ class Piece {
         }
     }
     isAttacked() {
-        let thisX = this.x;
-        let thisY = this.y;
-
-        for(let otherPiece of pieces) {
-            if(otherPiece.color != this.color) {
-                let capture = otherPiece.moves.find(function(move) {
-                    return posEquals(move, thisX, thisY);
-                });
-            }
-        }
+        return isFieldAttacked(this.x, this.y, getOppositeColor(this.color));
     }
 }
 
@@ -193,7 +190,8 @@ class _Pawn extends Piece {
         const move = getPos(this.x + this.direction, this.y + captureDirectionY);
         let pieceToCapture = getPiece(move.x, move.y);
 
-        if(pieceToCapture && pieceToCapture.color != this.color) {
+        this.attacked.push(move);
+        if(pieceToCapture && pieceToCapture.color != this.color && !isKing(move.x, move.y)) {
             move.toCapture = pieceToCapture;
             this.tryGetPawnCapture(move);
         }
@@ -201,7 +199,7 @@ class _Pawn extends Piece {
     findPawnEnPassanteCapture(captureDirectionY) {
         let piece = getPiece(this.x, this.y + captureDirectionY);
 
-        if(piece && getType(piece) == "_Pawn" && piece.color != this.color) {
+        if(piece && piece.type == _PAWN && piece.color != this.color) {
             let lastMove = piece.lastMove;
 
             if(lastMove && piece == lastAction().piece) {
@@ -224,9 +222,7 @@ class _Pawn extends Piece {
         return false;
     }
     tryGetPawnCapture(move) {
-        if(!isKing(move.x, move.y)) {
-            this.moves.push(move);
-        }
+        this.moves.push(move);
     }
 }
 
@@ -282,18 +278,78 @@ class _King extends Piece {
     constructor(x, y, colorIndex) {
         super(x, y, _KING, colorIndex);
     }
+    move(x, y) {
+        super.move(x, y);
+
+        let move = getMove(x, y, this);
+        if(move && move.castling) {
+            this.doCastling(move.castling);
+        }
+    }
     getMoves() {
         super.getMoves();
         for(let x = -1; x <= 1; x++) {
             for(let y = -1; y <= 1; y++) {
                 if(x == 0 && y == 0) continue;
-                const xPos = this.x + x;
-                const yPos = this.y + y;
-
+                let xPos = this.x + x;
+                let yPos = this.y + y;
+                
                 this.tryGetMove(xPos, yPos);
             }
         }
+
+        let rooks = getPiecesOfType(_ROOK, this.color);
+        this.tryGetCastling(rooks[0]);
+        this.tryGetCastling(rooks[1]);
+
         this.findCaptures();
+    }
+    tryGetMove(x, y) {
+        if(!isFieldAttacked(x, y, getOppositeColor(this.color))) {
+            super.tryGetMove(x, y);
+        } else {
+            this.attacked.push(getPos(x, y));
+        }
+    }
+    tryGetCastling(rook) {
+        if(!rook) return;
+        
+        let kingY = this.y;
+        let rookY = rook.y;
+
+        let alreadyMoved = rook.alreadyMoved || this.alreadyMoved;
+        let attacked = this.isAttacked() || rook.isAttacked();
+
+        if(!alreadyMoved && !attacked) {
+            let beginY = ((kingY > rookY) ? rookY : kingY) + 1;
+            let endY = ((kingY > rookY) ? kingY : rookY) - 1;
+
+            let direction = (kingY > rookY) ? -1 : 1;
+            
+            for(let y = beginY; y <= endY; y++) {
+                let isThisFieldAttacked = isFieldAttacked(this.x, y, getOppositeColor(this.color));
+                let isThisFieldTaken = isFieldTaken(this.x, y);
+
+                if(isThisFieldAttacked || isThisFieldTaken) return;
+            }
+
+            let castlingX = this.x;
+            let castlingY = this.y + 2 * direction;
+
+            let rookCastlingX = rook.x;
+            let rookCastlingY = castlingY - direction;
+
+            let move = getPos(castlingX, castlingY);
+            move.castling = {
+                rook: rook,
+                rookX: rookCastlingX,
+                rookY: rookCastlingY
+            };
+            this.moves.push(move);
+        }
+    }
+    doCastling(castling) {
+        movePiece(castling.rookX, castling.rookY, castling.rook);
     }
 }
 class _Queen extends Piece {
@@ -358,10 +414,8 @@ function getAllDiagonalMoves(piece) {
 function tryAddMove(piece, posX, posY) {
     let pieceOnPosition = getPiece(posX, posY);
 
-    if(!posValid(posX, posY) || (pieceOnPosition && pieceOnPosition.color == piece.color)) return false;
     piece.tryGetMove(posX, posY);
-    
-    if(pieceOnPosition && pieceOnPosition.color != piece.color) {
+    if(!posValid(posX, posY) || pieceOnPosition) {
         return false;
     }
     return true;
@@ -377,9 +431,11 @@ function movePiece(x, y, piece) {
     updateMoves();
 }
 function updateMoves() {
-    for(let otherPiece of pieces) {
-        otherPiece.getMoves();
+    for(let piece of pieces) {
+        piece.getMoves();
     }
+    getKing(TYPE_LIGHT).getMoves();
+    getKing(TYPE_DARK).getMoves();
 }
 
 // Functions capturing a piece & removing it from the array
@@ -389,4 +445,8 @@ function capturePiece(piece) {
 }
 function removePiece(piece) {
     pieces.splice(pieces.indexOf(piece), 1);
+}
+
+function isCheck(kingColor) {
+    return getKing(kingColor).isAttacked();
 }

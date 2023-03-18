@@ -103,6 +103,12 @@ function renderAllPossibleMoves(piece) {
     }
 }
 
+function tryRenderCheck(x, y) {
+    if(isCheck(TYPE_LIGHT) && posEquals(getKing(TYPE_LIGHT), x, y) || isCheck(TYPE_DARK) && posEquals(getKing(TYPE_DARK), x, y)) {
+        renderFieldSelected(x, y, SELECTED_CHECK);
+    }
+}
+
 // Function loading images
 function loadImage(path) {
     const img = document.createElement("img");

@@ -131,6 +131,8 @@ function renderBoard() {
                 continue;
             }
             renderField(x, y, MODULO_X ? TYPE_LIGHT : TYPE_DARK);
+            
+            tryRenderCheck(x, y);
             if(choosenPiece && posEquals(choosenPiece, x, y)) {
                 renderFieldCurrent(x, y);
             }
