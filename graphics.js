@@ -103,8 +103,8 @@ function renderAllPossibleMoves(piece) {
     }
 }
 
-function tryRenderCheck(x, y) {
-    if(isCheck(TYPE_LIGHT) && posEquals(getKing(TYPE_LIGHT), x, y) || isCheck(TYPE_DARK) && posEquals(getKing(TYPE_DARK), x, y)) {
+function tryRenderCheck(board, x, y) {
+    if(board.isCheck(TYPE_LIGHT) && posEquals(board.getKing(TYPE_LIGHT), x, y) || board.isCheck(TYPE_DARK) && posEquals(board.getKing(TYPE_DARK), x, y)) {
         renderFieldSelected(x, y, SELECTED_CHECK);
     }
 }

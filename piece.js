@@ -8,10 +8,6 @@ const _BISHOP = 3;
 const _QUEEN = 4;
 const _KING = 5;
 
-// Players pieces arrays
-const pieces = [];
-const capturedPieces = [];
-
 const BEGIN_CHESS_ORDER = [_ROOK, _KNIGHT, _BISHOP, _KING, _QUEEN, _BISHOP, _KNIGHT, _ROOK];
 const CLASSES_OF_PIECES = [];
 
@@ -32,31 +28,14 @@ function initPieces() {
 
     CLASSES_OF_PIECES[_QUEEN] = _Queen;
     CLASSES_OF_PIECES[_KING] = _King;
-
-    // Pawns
-    for(let i = 0; i < FIELDS_IN_ROW; i++) {
-        pieces.push(new _Pawn(i, TYPE_LIGHT));
-        pieces.push(new _Pawn(i, TYPE_DARK));
-    }
-
-    // Other pieces
-    for(let i = 0; i < FIELDS_IN_ROW; i++) {
-        const pieceType = BEGIN_CHESS_ORDER[i];
-
-        pieces.push(new CLASSES_OF_PIECES[pieceType](LIGHT_PIECES_X, i, TYPE_LIGHT));
-        pieces.push(new CLASSES_OF_PIECES[pieceType](DARK_PIECES_X, i, TYPE_DARK));
-    }
-
-    for(let piece of pieces) {
-        piece.getMoves();
-    }
 }
 
 // Class of Piece
 class Piece {
-    constructor(beginX, beginY, typeIndex, colorIndex) {
+    constructor(beginX, beginY, typeIndex, colorIndex, board) {
         this.type = typeIndex;
         this.color = colorIndex;
+        this.board = board;
         
         this.x = beginX;
         this.y = beginY;
@@ -78,7 +57,7 @@ class Piece {
     }
 
     move(x, y) {
-        let move = getMove(x, y, this);
+        let move = this.board.getMove(x, y, this);
 
         if(move) {
             this.lastMove = {
@@ -93,7 +72,7 @@ class Piece {
 
             if(move.toCapture) {
                 this.lastMove.captured = move.toCapture;
-                capturePiece(move.toCapture);
+                this.board.capturePiece(move.toCapture);
             }
             addAction(this.lastMove);
             return true;
@@ -105,13 +84,13 @@ class Piece {
         this.attacked = [];
     }
     tryGetMove(x, y) {
-        const thisColorPiece = getPiece(x, y, this.color);
+        const thisColorPiece = this.board.getPiece(x, y, this.color);
 
         if(posValid(x, y)) {
             let position = getPos(x, y);
             this.attacked.push(position);
 
-            if(!thisColorPiece && !isKing(x, y)) {
+            if(!thisColorPiece && !this.board.isKing(x, y)) {
                 this.moves.push(position);
                 return true;
             }
@@ -120,7 +99,7 @@ class Piece {
     }
     findCaptures() {
         for(let move of this.moves) {
-            const piece = getPiece(move.x, move.y);
+            const piece = this.board.getPiece(move.x, move.y);
 
             if(piece && piece.color != this.color) {
                 move.toCapture = piece;
@@ -128,7 +107,7 @@ class Piece {
         }
     }
     isAttacked() {
-        return isFieldAttacked(this.x, this.y, getOppositeColor(this.color));
+        return this.board.isFieldAttacked(this.x, this.y, getOppositeColor(this.color));
     }
 }
 
@@ -140,8 +119,8 @@ const DIR_RIGHT = 1;
 
 // Subclasses of pieces
 class _Pawn extends Piece {
-    constructor(indexY, colorIndex) {
-        super((colorIndex == TYPE_LIGHT) ? LIGHT_PAWNS_X : DARK_PAWNS_X, indexY, _PAWN, colorIndex);
+    constructor(indexY, colorIndex, board) {
+        super((colorIndex == TYPE_LIGHT) ? LIGHT_PAWNS_X : DARK_PAWNS_X, indexY, _PAWN, colorIndex, board);
         this.direction = (this.color == TYPE_LIGHT) ? DIR_RIGHT : DIR_LEFT;
     }
 
@@ -163,14 +142,14 @@ class _Pawn extends Piece {
         this.findCaptures();
     }
     getQueen() {
-        removePiece(this);
-        pieces.push(new _Queen(this.x, this.y, this.color));
+        this.board.removePiece(this);
+        this.board.pieces.push(new _Queen(this.x, this.y, this.color, this.board));
     }
 
     tryGetMove(x, y) {
         let movePosition = getPos(x, y);
 
-        if(!getPiece(x, y)) {
+        if(!this.board.getPiece(x, y)) {
             this.moves.push(movePosition);
             return true;
         }
@@ -188,16 +167,16 @@ class _Pawn extends Piece {
 
     findPawnCapture(captureDirectionY) {
         const move = getPos(this.x + this.direction, this.y + captureDirectionY);
-        let pieceToCapture = getPiece(move.x, move.y);
+        let pieceToCapture = this.board.getPiece(move.x, move.y);
 
         this.attacked.push(move);
-        if(pieceToCapture && pieceToCapture.color != this.color && !isKing(move.x, move.y)) {
+        if(pieceToCapture && pieceToCapture.color != this.color && !this.board.isKing(move.x, move.y)) {
             move.toCapture = pieceToCapture;
             this.tryGetPawnCapture(move);
         }
     }
     findPawnEnPassanteCapture(captureDirectionY) {
-        let piece = getPiece(this.x, this.y + captureDirectionY);
+        let piece = this.board.getPiece(this.x, this.y + captureDirectionY);
 
         if(piece && piece.type == _PAWN && piece.color != this.color) {
             let lastMove = piece.lastMove;
@@ -227,8 +206,8 @@ class _Pawn extends Piece {
 }
 
 class _Rook extends Piece {
-    constructor(x, y, colorIndex) {
-        super(x, y, _ROOK, colorIndex);
+    constructor(x, y, colorIndex, board) {
+        super(x, y, _ROOK, colorIndex, board);
     }
     getMoves() {
         super.getMoves();
@@ -238,8 +217,8 @@ class _Rook extends Piece {
     }
 }
 class _Knight extends Piece {
-    constructor(x, y, colorIndex) {
-        super(x, y, _KNIGHT, colorIndex);
+    constructor(x, y, colorIndex, board) {
+        super(x, y, _KNIGHT, colorIndex, board);
     }
     getMoves() {
         super.getMoves();
@@ -263,8 +242,8 @@ class _Knight extends Piece {
     }
 }
 class _Bishop extends Piece {
-    constructor(x, y, colorIndex) {
-        super(x, y, _BISHOP, colorIndex);
+    constructor(x, y, colorIndex, board) {
+        super(x, y, _BISHOP, colorIndex, board);
     }
     getMoves() {
         super.getMoves();
@@ -275,13 +254,13 @@ class _Bishop extends Piece {
 }
 
 class _King extends Piece {
-    constructor(x, y, colorIndex) {
-        super(x, y, _KING, colorIndex);
+    constructor(x, y, colorIndex, board) {
+        super(x, y, _KING, colorIndex, board);
     }
     move(x, y) {
         super.move(x, y);
 
-        let move = getMove(x, y, this);
+        let move = this.board.getMove(x, y, this);
         if(move && move.castling) {
             this.doCastling(move.castling);
         }
@@ -298,14 +277,14 @@ class _King extends Piece {
             }
         }
 
-        let rooks = getPiecesOfType(_ROOK, this.color);
+        let rooks = this.board.getPiecesOfType(_ROOK, this.color);
         this.tryGetCastling(rooks[0]);
         this.tryGetCastling(rooks[1]);
 
         this.findCaptures();
     }
     tryGetMove(x, y) {
-        if(!isFieldAttacked(x, y, getOppositeColor(this.color))) {
+        if(!this.board.isFieldAttacked(x, y, getOppositeColor(this.color))) {
             super.tryGetMove(x, y);
         } else {
             this.attacked.push(getPos(x, y));
@@ -327,8 +306,8 @@ class _King extends Piece {
             let direction = (kingY > rookY) ? -1 : 1;
             
             for(let y = beginY; y <= endY; y++) {
-                let isThisFieldAttacked = isFieldAttacked(this.x, y, getOppositeColor(this.color));
-                let isThisFieldTaken = isFieldTaken(this.x, y);
+                let isThisFieldAttacked = this.board.isFieldAttacked(this.x, y, getOppositeColor(this.color));
+                let isThisFieldTaken = this.board.isFieldTaken(this.x, y);
 
                 if(isThisFieldAttacked || isThisFieldTaken) return;
             }
@@ -353,8 +332,8 @@ class _King extends Piece {
     }
 }
 class _Queen extends Piece {
-    constructor(x, y, colorIndex) {
-        super(x, y, _QUEEN, colorIndex);
+    constructor(x, y, colorIndex, board) {
+        super(x, y, _QUEEN, colorIndex, board);
     }
     getMoves() {
         super.getMoves();
@@ -412,41 +391,11 @@ function getAllDiagonalMoves(piece) {
 }
 
 function tryAddMove(piece, posX, posY) {
-    let pieceOnPosition = getPiece(posX, posY);
+    let pieceOnPosition = piece.board.getPiece(posX, posY);
 
     piece.tryGetMove(posX, posY);
     if(!posValid(posX, posY) || pieceOnPosition) {
         return false;
     }
     return true;
-}
-
-// Function moving a piece & updated the others
-function movePiece(x, y, piece) {
-    if(!posValid(x, y)) {
-        return;
-    }
-
-    piece.move(x, y);
-    updateMoves();
-}
-function updateMoves() {
-    for(let piece of pieces) {
-        piece.getMoves();
-    }
-    getKing(TYPE_LIGHT).getMoves();
-    getKing(TYPE_DARK).getMoves();
-}
-
-// Functions capturing a piece & removing it from the array
-function capturePiece(piece) {
-    removePiece(piece);
-    capturedPieces.push(piece);
-}
-function removePiece(piece) {
-    pieces.splice(pieces.indexOf(piece), 1);
-}
-
-function isCheck(kingColor) {
-    return getKing(kingColor).isAttacked();
 }

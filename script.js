@@ -24,6 +24,7 @@ let selectedField = null;
 let offsetX = -1;
 let offsetY = -1;
 
+let board = null;
 let actions = [];
 
 function init() {
@@ -58,10 +59,12 @@ function init() {
     canvas.oncontextmenu = function() {
         return false;
     }
+
     
     initColors();
     initPieces();
-    
+
+    board = new Board();
     update();
 }
 
@@ -74,11 +77,11 @@ function mouseMovePiece() {
 }
 function mouseMoveFirst() {
     const fieldPosition = getFieldPosition(mouseX, mouseY);
-    const fieldTaken = isFieldTaken(fieldPosition.x, fieldPosition.y);
+    const fieldTaken = board.isFieldTaken(fieldPosition.x, fieldPosition.y);
 
     canvas.style.cursor = fieldTaken ? CURSOR_POINTER : CURSOR_DEFAULT;
     if(mouseClicked && fieldTaken) {
-        choosenPiece = getPiece(fieldPosition.x, fieldPosition.y);
+        choosenPiece = board.getPiece(fieldPosition.x, fieldPosition.y);
 
         offsetX = mouseX - choosenPiece.x * FIELD_SIZE;
         offsetY = mouseY - choosenPiece.y * FIELD_SIZE;        
@@ -86,7 +89,7 @@ function mouseMoveFirst() {
 }
 function mouseUp() {
     if(choosenPiece != null && selectedField != null) {
-        movePiece(selectedField.x, selectedField.y, choosenPiece);
+        board.movePiece(selectedField.x, selectedField.y, choosenPiece);
     }
     choosenPiece = null;
     selectedField = null;
@@ -102,7 +105,7 @@ function update() {
 }
 // Render function
 function render() {
-    renderBoard();
+    renderBoard(board) ;
 
     if(choosenPiece != null) {
         renderChoosenPiece();
@@ -110,7 +113,7 @@ function render() {
 }
 
 // Render board & pieces
-function renderBoard() {
+function renderBoard(board) {
     // Render board
     for(let x = 0; x < FIELDS_IN_ROW; x++) {
         for(let y = 0; y < FIELDS_IN_ROW; y++) {
@@ -118,11 +121,11 @@ function renderBoard() {
             const MODULO_X = x % 2 != MODULO_Y;
 
             if(selectedField != null && posEquals(selectedField, x, y)) {
-                const pieceOnTheField = getPiece(selectedField.x, selectedField.y);
+                const pieceOnTheField = board.getPiece(selectedField.x, selectedField.y);
                 const isCapturedPiece = pieceOnTheField && pieceOnTheField.color != choosenPiece.color;
                 
                 let selectedColor = isCapturedPiece ? SELECTED_CAPTURING : SELECTED_DEFAULT;
-                let move = getMove(x, y, choosenPiece);
+                let move = board.getMove(x, y, choosenPiece);
                 
                 if(!move) selectedColor = SELECTED_DEFAULT;
                 else if(move.enPassante) selectedColor = SELECTED_CAPTURING;
@@ -132,21 +135,21 @@ function renderBoard() {
             }
             renderField(x, y, MODULO_X ? TYPE_LIGHT : TYPE_DARK);
             
-            tryRenderCheck(x, y);
             if(choosenPiece && posEquals(choosenPiece, x, y)) {
                 renderFieldCurrent(x, y);
             }
+            tryRenderCheck(board, x, y);
         }
     }
 
     // Render possible moves
-    for(let piece of pieces) {
+    for(let piece of board.pieces) {
         if(piece == choosenPiece) {
             renderAllPossibleMoves(piece);
         }
     }
     // Render pieces
-    for(let piece of pieces) {
+    for(let piece of board.pieces) {
         if(piece != choosenPiece) {
             piece.render();
         }
