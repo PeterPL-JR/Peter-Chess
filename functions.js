@@ -65,3 +65,8 @@ function copyObject(object) {
 function getOppositeColor(color) {
     return color == TYPE_LIGHT ? TYPE_DARK : TYPE_LIGHT;
 }
+
+// Function getting a random number of range(min, max)
+function getRandom(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}

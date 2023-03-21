@@ -140,7 +140,6 @@ class _Pawn extends Piece {
             this.tryGetMove(this.x + this.direction * 2, this.y);
         }
         this.findCaptures();
-        checkKingSafety(this.board, this);
     }
     getQueen() {
         this.board.removePiece(this);
@@ -182,7 +181,7 @@ class _Pawn extends Piece {
         if(piece && piece.type == _PAWN && piece.color != this.color) {
             let lastMove = piece.lastMove;
 
-            if(lastMove && piece == lastAction().piece) {
+            if(lastAction() && lastMove && piece == lastAction().piece) {
                 let requiredX = lastMove.newPos.x - piece.direction * 2;
                 let requiredY = piece.y;
 
@@ -218,7 +217,6 @@ class _Rook extends Piece {
 
         getAllStraightMoves(this);
         this.findCaptures();
-        checkKingSafety(this.board, this);
     }
 }
 class _Knight extends Piece {
@@ -235,7 +233,6 @@ class _Knight extends Piece {
         this.getKnightMove(-1, VERTICAL);
        
         this.findCaptures();
-        checkKingSafety(this.board, this);
     }
     getKnightMove(direction, moveType) {
         let dirs = getDirections(direction, moveType);
@@ -256,7 +253,6 @@ class _Bishop extends Piece {
 
         getAllDiagonalMoves(this);
         this.findCaptures();
-        checkKingSafety(this.board, this);
     }
 }
 
@@ -290,7 +286,6 @@ class _King extends Piece {
         this.tryGetCastling(rooks[1]);
 
         this.findCaptures();
-        checkKingSafety(this.board, this);
     }
     tryGetMove(x, y) {
         if(!this.board.isFieldAttacked(x, y, getOppositeColor(this.color))) {
@@ -351,7 +346,6 @@ class _Queen extends Piece {
         getAllStraightMoves(this);
         getAllDiagonalMoves(this);
         this.findCaptures();
-        checkKingSafety(this.board, this);
     }
 }
 
@@ -386,13 +380,15 @@ function getDiagonalMoves(piece, directionX, directionY) {
     }
 }
 
+// Straight moves to all directions
 function getAllStraightMoves(piece) {
     getStraightMoves(piece, 1, HORIZONTAL);
     getStraightMoves(piece, -1, HORIZONTAL);
-
+    
     getStraightMoves(piece, 1, VERTICAL);
     getStraightMoves(piece, -1, VERTICAL);
 }
+// Diagonal moves to all directions
 function getAllDiagonalMoves(piece) {
     getDiagonalMoves(piece, 1,1);
     getDiagonalMoves(piece, 1,-1);
@@ -407,45 +403,6 @@ function tryAddMove(piece, posX, posY) {
     piece.tryGetMove(posX, posY);
     if(!posValid(posX, posY) || pieceOnPosition) {
         return false;
-    }
-    return true;
-}
-
-function checkKingSafety(board, thisPiece) {
-    for(let move of thisPiece.moves) {
-        checkMoveSafety(board, thisPiece, move);
-    }
-}
-
-function checkMoveSafety(board, thisPiece, move) {
-    // Copy board
-    let copiedBoard = copyObject(board);    
-    
-    // Copy pieces
-    let copiedThisPiece = null;
-    let copiedPiecesArray = [];
-
-    for(let piece of copiedBoard.pieces) {
-        let copiedPiece = copyObject(piece);
-        copiedPiece.board = null;
-
-        if(piece == thisPiece) {
-            copiedThisPiece = copiedPiece;
-        }
-        copiedPiecesArray.push(copiedPiece);
-    }
-    copiedBoard.pieces = [];
-    
-    // Join copied board & pieces
-    for(let piece of copiedPiecesArray) {
-        piece.board = copiedBoard;
-        copiedBoard.pieces.push(piece);
-    }
-
-    // Move piece
-    if(!move.castling) {
-        copiedThisPiece.move(move.x, move.y, false);
-        return !copiedBoard.isCheck(copiedThisPiece.color);
     }
     return true;
 }

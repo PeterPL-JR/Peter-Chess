@@ -1,3 +1,4 @@
+// Board class
 class Board {
     constructor() {
         // Players pieces arrays
@@ -24,22 +25,30 @@ class Board {
     }
 
     // Method moving a piece & updated the others
-    movePiece(x, y, piece, castling=false) {
+    movePiece(x, y, piece, castling, checkSafety=true) {
         if(!posValid(x, y)) {
             return;
         }
         
         let isMoved = piece.move(x, y, castling);
-        this.updateMoves();
-        
+        this.updateMoves(checkSafety);
+
         return isMoved;
     }
-    updateMoves() {
+    updateMoves(checkSafety) {
         for(let piece of this.pieces) {
             piece.getMoves();
         }
-        this.getKing(TYPE_LIGHT).getMoves();
-        this.getKing(TYPE_DARK).getMoves();
+
+        let kingLight = this.getKing(TYPE_LIGHT);
+        let kingDark = this.getKing(TYPE_DARK);
+
+        if(kingLight) kingLight.getMoves();
+        if(kingDark) kingDark.getMoves();
+
+        if(checkSafety) {
+            checkKingSafety(this);
+        }
     }
 
     // Methods capturing a piece & removing it from the array
@@ -98,6 +107,24 @@ class Board {
         return false;
     }
 
+    // Method getting all pieces attacking a king of a color
+    getAttackingPieces(color) {
+        let attackingPieces = [];
+        for(let piece of this.pieces) {
+            if(piece.color == color) continue;
+            
+            for(let attackedField of piece.attacked) {
+                let pieceOnPosition = this.getPiece(attackedField.x, attackedField.y);
+
+                if(pieceOnPosition && getType(pieceOnPosition) == "_King" && piece.color != pieceOnPosition.color) {
+                    attackingPieces.push(piece);
+                    break;
+                }
+            }
+        }
+        return attackingPieces;
+    }
+
     // Method getting all pieces of a type
     getPiecesOfType(type, color) {
         let foundPieces = [];
@@ -116,4 +143,77 @@ class Board {
             return piece.type == _KING && piece.color == color;
         });
     }
+}
+
+// Function checking if a king is safe after every move
+function checkKingSafety(board) {
+    for(let piece of board.pieces) {
+        let newMoves = [];
+
+        for(let move of piece.moves) {
+            let safe = checkMoveSafety(board, piece, move);
+            if(safe) newMoves.push(move);
+        }
+        piece.moves = newMoves;
+    }
+}
+
+// Function checking if a move is safe for a king
+function checkMoveSafety(board, thisPiece, move) {
+    let copiedBoard = copyBoardObject(board);
+    let copiedThisPiece = copiedBoard.getPiece(thisPiece.x, thisPiece.y);
+    
+    // Move piece
+    let color = copiedThisPiece.color;
+    if(!move.castling) {
+        copiedBoard.movePiece(move.x, move.y, copiedThisPiece, false, false);
+        let piecesAttackingKing = board.getAttackingPieces(color);
+
+        if(piecesAttackingKing.length == 1 && piecesAttackingKing.indexOf(move.toCapture) != -1) {
+            return true;
+        }
+        return !copiedBoard.isCheck(color);
+    }
+    return true;
+}
+
+// Function copying a border object
+function copyBoardObject(board) {
+    // Copy board
+    let copiedBoard = copyObject(board);
+
+    // Copy pieces
+    let copiedPiecesArray = [];
+    
+    for(let piece of copiedBoard.pieces) {
+        let copiedPiece = copyObject(piece);
+        copiedPiece.board = null;
+        copiedPiecesArray.push(copiedPiece);
+    }
+    copiedBoard.pieces = [];
+
+    // Join copied board & pieces
+    for(let piece of copiedPiecesArray) {
+        piece.board = copiedBoard;
+        copiedBoard.pieces.push(piece);
+    }
+
+    // // Copy moves
+    for(let piece of copiedBoard.pieces) {
+        let copiedMoves = [];
+        for(let move of piece.moves) {
+            copiedMoves.push(copyObject(move));
+        }
+        piece.moves = copiedMoves;
+    }
+    // Copy pieces to capture of moves
+    for(let piece of copiedBoard.pieces) {
+        for(let move of piece.moves) {
+            if(move.toCapture) {
+                let toCapture = copiedBoard.getPiece(move.toCapture.x, move.toCapture.y);
+                move.toCapture = toCapture;
+            }
+        }
+    }
+    return copiedBoard;
 }

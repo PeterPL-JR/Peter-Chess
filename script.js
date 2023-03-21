@@ -61,7 +61,6 @@ function init() {
     canvas.oncontextmenu = function() {
         return false;
     }
-
     
     initColors();
     initPieces();
@@ -91,7 +90,7 @@ function mouseMoveFirst() {
 }
 function mouseUp() {
     if(choosenPiece != null && selectedField != null) {
-        tryMovePiece();
+        tryMovePiece(choosenPiece, selectedField);
     }
     choosenPiece = null;
     selectedField = null;
@@ -107,7 +106,7 @@ function update() {
 }
 // Render function
 function render() {
-    renderBoard(board) ;
+    renderBoard(board);
 
     if(choosenPiece != null) {
         renderChoosenPiece();
@@ -188,16 +187,17 @@ function renderChoosenPiece() {
     choosenPiece.renderOnCanvas(position.x, position.y);
 }
 
-function tryMovePiece() {
-    if(isTurn(choosenPiece.color)) {
-        let isMoved = board.movePiece(selectedField.x, selectedField.y, choosenPiece);
+function tryMovePiece(piece, pos) {
+    if(isTurn(piece.color)) {
+        let isMoved = board.movePiece(pos.x, pos.y, piece, false);
         if(isMoved) {
             changeTurn();
-            addAction(choosenPiece.color, choosenPiece, choosenPiece.lastMove);
+            addAction(piece.color, piece, piece.lastMove);
         }
     }
 }
 
+// Adding action to the array
 function addAction(colorType, piece, action) {
     let last = lastAction();
     if(last && last.action.castling && action.castling) {
@@ -209,10 +209,12 @@ function addAction(colorType, piece, action) {
         action: action
     })
 }
+// Last action
 function lastAction() {
     return actions[actions.length - 1];
 }
 
+// Render last action
 function renderLastAction() {
     let last = lastAction();
     if(last) {

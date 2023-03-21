@@ -52,7 +52,6 @@ function renderFieldSelected(x, y, selectedFieldType) {
     ctx.fillStyle = color;
     ctx.fillRect(INNER_X_POS, INNER_Y_POS, INNER_SQUARE_SIZE, INNER_SQUARE_SIZE);
 }
-
 function renderFieldMarked(x, y) {
     const CURRENT_POS_BORDER_WIDTH = BORDER_SIZE;
     const CURRENT_POS_FIELD_SIZE = FIELD_SIZE - CURRENT_POS_BORDER_WIDTH;
@@ -108,6 +107,7 @@ function renderAllPossibleMoves(piece) {
     }
 }
 
+// Try to render a check
 function tryRenderCheck(board, colorType) {
     if(board.isCheck(colorType)) {
         let king = board.getKing(colorType);
