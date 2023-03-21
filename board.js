@@ -24,13 +24,15 @@ class Board {
     }
 
     // Method moving a piece & updated the others
-    movePiece(x, y, piece) {
+    movePiece(x, y, piece, castling=false) {
         if(!posValid(x, y)) {
             return;
         }
-
-        piece.move(x, y);
+        
+        let isMoved = piece.move(x, y, castling);
         this.updateMoves();
+        
+        return isMoved;
     }
     updateMoves() {
         for(let piece of this.pieces) {
@@ -108,10 +110,6 @@ class Board {
         return foundPieces;
     }
 
-    // Method checking if a piece is a king
-    isKing(piece) {
-        return piece && piece.type == _KING;
-    }
     // Method getting object of a king of a color
     getKing(color) {
         return this.pieces.find(function(piece) {

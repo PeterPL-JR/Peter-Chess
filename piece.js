@@ -8,7 +8,7 @@ const _BISHOP = 3;
 const _QUEEN = 4;
 const _KING = 5;
 
-const BEGIN_CHESS_ORDER = [_ROOK, _KNIGHT, _BISHOP, _KING, _QUEEN, _BISHOP, _KNIGHT, _ROOK];
+const BEGIN_CHESS_ORDER = [_ROOK, _KNIGHT, _BISHOP, _QUEEN, _KING, _BISHOP, _KNIGHT, _ROOK];
 const CLASSES_OF_PIECES = [];
 
 // Positions of pieces
@@ -56,15 +56,15 @@ class Piece {
         ctx.drawImage(chessImage, CUT_X, CUT_Y, IMAGE_PIECE_SIZE, IMAGE_PIECE_SIZE, x, y, FIELD_SIZE, FIELD_SIZE);
     }
 
-    move(x, y) {
+    move(x, y, castling=false) {
         let move = this.board.getMove(x, y, this);
-
+        
         if(move) {
             this.lastMove = {
-                piece: this,
-                oldPosision: getPos(this.x, this.y),
-                newPosition: getPos(x, y)
+                oldPos: getPos(this.x, this.y),
+                newPos: getPos(x, y)
             };
+            if(castling) this.lastMove.castling = true;
 
             this.x = x;
             this.y = y;
@@ -74,7 +74,6 @@ class Piece {
                 this.lastMove.captured = move.toCapture;
                 this.board.capturePiece(move.toCapture);
             }
-            addAction(this.lastMove);
             return true;
         }
         return false;
@@ -90,7 +89,7 @@ class Piece {
             let position = getPos(x, y);
             this.attacked.push(position);
 
-            if(!thisColorPiece && !this.board.isKing(x, y)) {
+            if(!thisColorPiece && !isKing(this.board.getPiece(x, y))) {
                 this.moves.push(position);
                 return true;
             }
@@ -131,6 +130,7 @@ class _Pawn extends Piece {
         if(pawnMoved && this.x == LAST_PAWN_FIELD) {
             this.getQueen();
         }
+        return pawnMoved;
     }
     getMoves() {
         super.getMoves();
@@ -140,6 +140,7 @@ class _Pawn extends Piece {
             this.tryGetMove(this.x + this.direction * 2, this.y);
         }
         this.findCaptures();
+        checkKingSafety(this.board, this);
     }
     getQueen() {
         this.board.removePiece(this);
@@ -170,7 +171,7 @@ class _Pawn extends Piece {
         let pieceToCapture = this.board.getPiece(move.x, move.y);
 
         this.attacked.push(move);
-        if(pieceToCapture && pieceToCapture.color != this.color && !this.board.isKing(move.x, move.y)) {
+        if(pieceToCapture && pieceToCapture.color != this.color && !isKing(this.board.getPiece(move.x, move.y))) {
             move.toCapture = pieceToCapture;
             this.tryGetPawnCapture(move);
         }
@@ -182,10 +183,10 @@ class _Pawn extends Piece {
             let lastMove = piece.lastMove;
 
             if(lastMove && piece == lastAction().piece) {
-                let requiredX = lastMove.newPosition.x - piece.direction * 2;
+                let requiredX = lastMove.newPos.x - piece.direction * 2;
                 let requiredY = piece.y;
 
-                if(posEquals(lastMove.oldPosision, requiredX, requiredY)) {
+                if(posEquals(lastMove.oldPos, requiredX, requiredY)) {
                     let moveX = this.x + this.direction;
                     let moveY = this.y + captureDirectionY;
 
@@ -209,11 +210,15 @@ class _Rook extends Piece {
     constructor(x, y, colorIndex, board) {
         super(x, y, _ROOK, colorIndex, board);
     }
+    move(x, y, castling) {
+        return super.move(x, y, castling);
+    }
     getMoves() {
         super.getMoves();
 
         getAllStraightMoves(this);
         this.findCaptures();
+        checkKingSafety(this.board, this);
     }
 }
 class _Knight extends Piece {
@@ -230,6 +235,7 @@ class _Knight extends Piece {
         this.getKnightMove(-1, VERTICAL);
        
         this.findCaptures();
+        checkKingSafety(this.board, this);
     }
     getKnightMove(direction, moveType) {
         let dirs = getDirections(direction, moveType);
@@ -250,6 +256,7 @@ class _Bishop extends Piece {
 
         getAllDiagonalMoves(this);
         this.findCaptures();
+        checkKingSafety(this.board, this);
     }
 }
 
@@ -258,12 +265,13 @@ class _King extends Piece {
         super(x, y, _KING, colorIndex, board);
     }
     move(x, y) {
-        super.move(x, y);
-
         let move = this.board.getMove(x, y, this);
+
         if(move && move.castling) {
-            this.doCastling(move.castling);
+            this.doCastling(x, y, move.castling);
+            return true;
         }
+        return super.move(x, y);
     }
     getMoves() {
         super.getMoves();
@@ -282,6 +290,7 @@ class _King extends Piece {
         this.tryGetCastling(rooks[1]);
 
         this.findCaptures();
+        checkKingSafety(this.board, this);
     }
     tryGetMove(x, y) {
         if(!this.board.isFieldAttacked(x, y, getOppositeColor(this.color))) {
@@ -327,8 +336,9 @@ class _King extends Piece {
             this.moves.push(move);
         }
     }
-    doCastling(castling) {
-        movePiece(castling.rookX, castling.rookY, castling.rook);
+    doCastling(x, y, castling) {
+        super.move(x, y, true);
+        this.board.movePiece(castling.rookX, castling.rookY, castling.rook, true);
     }
 }
 class _Queen extends Piece {
@@ -341,6 +351,7 @@ class _Queen extends Piece {
         getAllStraightMoves(this);
         getAllDiagonalMoves(this);
         this.findCaptures();
+        checkKingSafety(this.board, this);
     }
 }
 
@@ -396,6 +407,45 @@ function tryAddMove(piece, posX, posY) {
     piece.tryGetMove(posX, posY);
     if(!posValid(posX, posY) || pieceOnPosition) {
         return false;
+    }
+    return true;
+}
+
+function checkKingSafety(board, thisPiece) {
+    for(let move of thisPiece.moves) {
+        checkMoveSafety(board, thisPiece, move);
+    }
+}
+
+function checkMoveSafety(board, thisPiece, move) {
+    // Copy board
+    let copiedBoard = copyObject(board);    
+    
+    // Copy pieces
+    let copiedThisPiece = null;
+    let copiedPiecesArray = [];
+
+    for(let piece of copiedBoard.pieces) {
+        let copiedPiece = copyObject(piece);
+        copiedPiece.board = null;
+
+        if(piece == thisPiece) {
+            copiedThisPiece = copiedPiece;
+        }
+        copiedPiecesArray.push(copiedPiece);
+    }
+    copiedBoard.pieces = [];
+    
+    // Join copied board & pieces
+    for(let piece of copiedPiecesArray) {
+        piece.board = copiedBoard;
+        copiedBoard.pieces.push(piece);
+    }
+
+    // Move piece
+    if(!move.castling) {
+        copiedThisPiece.move(move.x, move.y, false);
+        return !copiedBoard.isCheck(copiedThisPiece.color);
     }
     return true;
 }

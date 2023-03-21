@@ -21,6 +21,8 @@ let mouseClicked = false;
 let choosenPiece = null;
 let selectedField = null;
 
+let turn = TYPE_LIGHT;
+
 let offsetX = -1;
 let offsetY = -1;
 
@@ -89,7 +91,7 @@ function mouseMoveFirst() {
 }
 function mouseUp() {
     if(choosenPiece != null && selectedField != null) {
-        board.movePiece(selectedField.x, selectedField.y, choosenPiece);
+        tryMovePiece();
     }
     choosenPiece = null;
     selectedField = null;
@@ -119,32 +121,24 @@ function renderBoard(board) {
         for(let y = 0; y < FIELDS_IN_ROW; y++) {
             const MODULO_Y = y % 2 == 0 ? TYPE_LIGHT : TYPE_DARK;
             const MODULO_X = x % 2 != MODULO_Y;
-
-            if(selectedField != null && posEquals(selectedField, x, y)) {
-                const pieceOnTheField = board.getPiece(selectedField.x, selectedField.y);
-                const isCapturedPiece = pieceOnTheField && pieceOnTheField.color != choosenPiece.color;
-                
-                let selectedColor = isCapturedPiece ? SELECTED_CAPTURING : SELECTED_DEFAULT;
-                let move = board.getMove(x, y, choosenPiece);
-                
-                if(!move) selectedColor = SELECTED_DEFAULT;
-                else if(move.enPassante) selectedColor = SELECTED_CAPTURING;
-
-                renderFieldSelected(x, y, selectedColor);
-                continue;
-            }
             renderField(x, y, MODULO_X ? TYPE_LIGHT : TYPE_DARK);
-            
-            if(choosenPiece && posEquals(choosenPiece, x, y)) {
-                renderFieldCurrent(x, y);
-            }
-            tryRenderCheck(board, x, y);
         }
     }
+    renderLastAction();
+
+    if(choosenPiece && isTurn(choosenPiece.color)) {
+        renderFieldMarked(choosenPiece.x, choosenPiece.y);
+    }
+    if(choosenPiece && selectedField && isTurn(choosenPiece.color)) {
+        renderChoosenField();
+    }
+
+    tryRenderCheck(board, TYPE_LIGHT);
+    tryRenderCheck(board, TYPE_DARK);
 
     // Render possible moves
     for(let piece of board.pieces) {
-        if(piece == choosenPiece) {
+        if(piece == choosenPiece && isTurn(piece.color)) {
             renderAllPossibleMoves(piece);
         }
     }
@@ -156,7 +150,7 @@ function renderBoard(board) {
     }
 }
 
-// Render Field
+// Render field
 function renderField(x, y, colorIndex) {
     const X_POS = getBoardPos(x);
     const Y_POS = getBoardPos(y);
@@ -172,6 +166,20 @@ function renderField(x, y, colorIndex) {
     ctx.fillRect(X_POS, Y_POS, FIELD_SIZE, BORDER_SIZE);
 }
 
+// Render field choosen to move to 
+function renderChoosenField() {
+    const pieceOnTheField = board.getPiece(selectedField.x, selectedField.y);
+    const isCapturedPiece = pieceOnTheField && pieceOnTheField.color != choosenPiece.color;
+    
+    let selectedColor = isCapturedPiece ? SELECTED_CAPTURING : SELECTED_DEFAULT;
+    let move = board.getMove(selectedField.x, selectedField.y, choosenPiece);
+    
+    if(!move) selectedColor = SELECTED_DEFAULT;
+    else if(move.enPassante) selectedColor = SELECTED_CAPTURING;
+    
+    renderFieldSelected(selectedField.x, selectedField.y, selectedColor);
+}
+
 // Update/render a piece moving by player
 function updateChoosenPiece() {
 }
@@ -180,9 +188,42 @@ function renderChoosenPiece() {
     choosenPiece.renderOnCanvas(position.x, position.y);
 }
 
-function addAction(action) {
-    actions.push(action);
+function tryMovePiece() {
+    if(isTurn(choosenPiece.color)) {
+        let isMoved = board.movePiece(selectedField.x, selectedField.y, choosenPiece);
+        if(isMoved) {
+            changeTurn();
+            addAction(choosenPiece.color, choosenPiece, choosenPiece.lastMove);
+        }
+    }
+}
+
+function addAction(colorType, piece, action) {
+    let last = lastAction();
+    if(last && last.action.castling && action.castling) {
+        return;
+    }
+    actions.push({
+        player: colorType,
+        piece: piece,
+        action: action
+    })
 }
 function lastAction() {
     return actions[actions.length - 1];
+}
+
+function renderLastAction() {
+    let last = lastAction();
+    if(last) {
+        renderFieldMarked(last.action.oldPos.x, last.action.oldPos.y);
+        renderFieldSelected(last.action.newPos.x, last.action.newPos.y, SELECTED_LAST_MOVE);
+    }
+}
+
+function isTurn(colorType) {
+    return turn == colorType;
+}
+function changeTurn() {
+    turn = (turn == TYPE_LIGHT) ? TYPE_DARK : TYPE_LIGHT;
 }

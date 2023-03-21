@@ -49,10 +49,16 @@ function posEquals(pos, x, y) {
 function getType(object) {
     return object.constructor.name;
 }
+// Function checking if a piece is a king
+function isKing(piece) {
+    return piece && piece.type == _KING;
+}
 
 // Function copying an object
 function copyObject(object) {
-    return Object.assign({}, object);
+    let newObject = Object.assign({}, object);
+    newObject.__proto__ = object.__proto__;
+    return newObject;
 }
 
 // Function returning an opposite color

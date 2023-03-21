@@ -13,6 +13,7 @@ const COLORS = [];
 const SELECTED_DEFAULT = 0;
 const SELECTED_CAPTURING = 1;
 const SELECTED_CHECK = 2;
+const SELECTED_LAST_MOVE = 3;
 
 function initColors() {
     COLORS[SELECTED_DEFAULT] = {
@@ -26,6 +27,10 @@ function initColors() {
     COLORS[SELECTED_CHECK] = {
         field: "#c75f52",
         border: "#8a2816"
+    };
+    COLORS[SELECTED_LAST_MOVE] = {
+        field: "#ffd13d",
+        border: "#cb9b00"
     };
 }
 
@@ -48,10 +53,10 @@ function renderFieldSelected(x, y, selectedFieldType) {
     ctx.fillRect(INNER_X_POS, INNER_Y_POS, INNER_SQUARE_SIZE, INNER_SQUARE_SIZE);
 }
 
-function renderFieldCurrent(x, y) {
+function renderFieldMarked(x, y) {
     const CURRENT_POS_BORDER_WIDTH = BORDER_SIZE;
     const CURRENT_POS_FIELD_SIZE = FIELD_SIZE - CURRENT_POS_BORDER_WIDTH;
-    const CURRENT_POS_COLOR = "#cb9b00";
+    const CURRENT_POS_COLOR = COLORS[SELECTED_LAST_MOVE]['border'];
 
     const posX = x * FIELD_SIZE + CURRENT_POS_BORDER_WIDTH / 2;
     const posY = y * FIELD_SIZE + CURRENT_POS_BORDER_WIDTH / 2;
@@ -103,9 +108,10 @@ function renderAllPossibleMoves(piece) {
     }
 }
 
-function tryRenderCheck(board, x, y) {
-    if(board.isCheck(TYPE_LIGHT) && posEquals(board.getKing(TYPE_LIGHT), x, y) || board.isCheck(TYPE_DARK) && posEquals(board.getKing(TYPE_DARK), x, y)) {
-        renderFieldSelected(x, y, SELECTED_CHECK);
+function tryRenderCheck(board, colorType) {
+    if(board.isCheck(colorType)) {
+        let king = board.getKing(colorType);
+        renderFieldSelected(king.x, king.y, SELECTED_CHECK);
     }
 }
 
