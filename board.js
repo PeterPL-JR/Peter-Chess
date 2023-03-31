@@ -33,6 +33,14 @@ class Board {
         let isMoved = piece.move(x, y, castling);
         this.updateMoves(checkSafety);
 
+        if(checkSafety) {
+            checkDraw(this, TYPE_LIGHT);
+            checkDraw(this, TYPE_DARK);
+
+            checkVictory(this, TYPE_LIGHT);
+            checkVictory(this, TYPE_DARK);
+        }
+
         return isMoved;
     }
     updateMoves(checkSafety) {
@@ -65,6 +73,7 @@ class Board {
         return this.getKing(kingColor).isAttacked();
     }
     isCheckMate(kingColor) {
+        return this.isCheck(kingColor) && countMoves(this, kingColor) == 0;
     }
 
     // Method finding a piece on position(x, y)
@@ -131,6 +140,18 @@ class Board {
     
         for(let piece of this.pieces) {
             if(piece.type == type && piece.color == color) {
+                foundPieces.push(piece);
+            }
+        }
+        return foundPieces;
+    }
+
+    // Method getting all piece of a color
+    getPiecesOfColor(color) {
+        let foundPieces = [];
+    
+        for(let piece of this.pieces) {
+            if(piece.color == color) {
                 foundPieces.push(piece);
             }
         }
@@ -216,4 +237,50 @@ function copyBoardObject(board) {
         }
     }
     return copiedBoard;
+}
+
+// Function counting moves of a player
+function countMoves(board, colorIndex) {
+    let piecesOfColor = board.getPiecesOfColor(colorIndex);
+    let _moves = 0;
+
+    for(let piece of piecesOfColor) {
+        _moves += piece.moves.length;
+    }
+    return _moves;
+}
+
+// Function checking if there's draw
+function checkDraw(board, playerColor) {
+    // There isn't check
+    let colorOfOpponent = getOppositeColor(playerColor); // Opponent
+    if(board.isCheck(colorOfOpponent)) return; 
+
+    // All pieces arrays of both types
+    let opponentPieces = board.getPiecesOfColor(colorOfOpponent); // Opponent pieces
+    let thisPieces = board.getPiecesOfColor(playerColor); // This player pieces
+    
+    let onlyKing = opponentPieces.length == 1; // Opponent has only king
+    let onlyKingThis = thisPieces.length == 1; // This player has only king
+    
+    let onlyTwoThis = thisPieces.length == 2; // This player has only two pieces
+    
+    let stalemate = countMoves(board, colorOfOpponent) == 0;
+    let kingsOnly = onlyKing && onlyKingThis;
+
+    let condition1 = onlyKing && onlyTwoThis && board.getPiecesOfType(_BISHOP, playerColor).length == 1;
+    let condition2 = onlyKing && onlyTwoThis && board.getPiecesOfType(_KNIGHT, playerColor).length == 1;
+
+    if(stalemate || kingsOnly || condition1 || condition2) {
+        draw();
+    }
+}
+
+// Function checking if there's victory 
+function checkVictory(board, playerColor) {
+    let colorOfOpponent = getOppositeColor(playerColor);
+    
+    if(board.isCheckMate(colorOfOpponent)) {
+        victory(playerColor);
+    }
 }

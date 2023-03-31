@@ -108,6 +108,9 @@ class Piece {
     isAttacked() {
         return this.board.isFieldAttacked(this.x, this.y, getOppositeColor(this.color));
     }
+    isOfType(typeIndex) {
+        return this.type == typeIndex;
+    }
 }
 
 const HORIZONTAL = 0;

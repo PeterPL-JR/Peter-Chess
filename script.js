@@ -28,6 +28,7 @@ let offsetY = -1;
 
 let board = null;
 let actions = [];
+let end = false;
 
 function init() {
     canvas.width = BOARD_SIZE;
@@ -45,6 +46,7 @@ function init() {
     canvas.onmousemove = function(event) {
         mouseX = getMouseX(event);
         mouseY = getMouseY(event);
+        if(end) return;
 
         if(choosenPiece == null) {
             mouseMoveFirst();
@@ -99,7 +101,7 @@ function mouseUp() {
 // Update function
 function update() {
     requestAnimationFrame(update);
-    if(choosenPiece != null) {
+    if(!end && choosenPiece != null) {
         updateChoosenPiece();
     }
     render();
@@ -228,4 +230,15 @@ function isTurn(colorType) {
 }
 function changeTurn() {
     turn = (turn == TYPE_LIGHT) ? TYPE_DARK : TYPE_LIGHT;
+}
+
+// Draw
+function draw() {
+    end = true;
+    console.log("Draw!");
+}
+// Victory
+function victory(playerColor) {
+    end = true;
+    console.log("Victory! " + playerColor)
 }
