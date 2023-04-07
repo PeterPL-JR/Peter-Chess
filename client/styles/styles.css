@@ -1,10 +1,16 @@
 :root {
-    --default: url("images/cursor_default.png"), auto;
-    --pointer: url("images/cursor_pointer.png"), auto;
+    --default: url("../images/cursor_default.png"), auto;
+    --pointer: url("../images/cursor_pointer.png"), auto;
 }
 
 body {
     background-color: black;
+    background-image: url("../images/background.png");
+    
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+
     margin-top: 60px;
     text-align: center;
 }
@@ -13,4 +19,10 @@ html {
 }
 canvas {
     background-color: #121212;
+    box-shadow: 45px 45px 80px black;
+}
+
+#menu-content {
+}
+#chess-content {
 }
