@@ -45,15 +45,15 @@ function renderFieldSelected(x, y, selectedFieldType) {
     ctx.fillStyle = borderColor;
     ctx.fillRect(X_POS, Y_POS, FIELD_SIZE, FIELD_SIZE);
 
-    const INNER_X_POS = X_POS + BORDER_SIZE;
-    const INNER_Y_POS = Y_POS + BORDER_SIZE;
+    const INNER_X_POS = X_POS + BORDER_WIDTH;
+    const INNER_Y_POS = Y_POS + BORDER_WIDTH;
 
-    const INNER_SQUARE_SIZE = FIELD_SIZE - 2 * BORDER_SIZE;
+    const INNER_SQUARE_SIZE = FIELD_SIZE - 2 * BORDER_WIDTH;
     ctx.fillStyle = color;
     ctx.fillRect(INNER_X_POS, INNER_Y_POS, INNER_SQUARE_SIZE, INNER_SQUARE_SIZE);
 }
 function renderFieldMarked(x, y) {
-    const CURRENT_POS_BORDER_WIDTH = BORDER_SIZE;
+    const CURRENT_POS_BORDER_WIDTH = BORDER_WIDTH;
     const CURRENT_POS_FIELD_SIZE = FIELD_SIZE - CURRENT_POS_BORDER_WIDTH;
     const CURRENT_POS_COLOR = COLORS[SELECTED_LAST_MOVE]['border'];
 

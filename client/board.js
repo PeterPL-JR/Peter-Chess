@@ -284,3 +284,11 @@ function checkVictory(board, playerColor) {
         victory(playerColor);
     }
 }
+
+// Function blocking/unblocking board (mouse events on it)
+function setBoardBlocked(blocked) {
+    boardBlocked = blocked;
+    if(blocked) {
+        canvas.style.cursor = CURSOR_DEFAULT;
+    }
+}

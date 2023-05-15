@@ -1,11 +1,12 @@
 const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
 
-const FIELD_SIZE = 90;
-const BORDER_SIZE = FIELD_SIZE * 0.08;
-
+let FIELD_SIZE = 90;
 const FIELDS_IN_ROW = 8;
-const BOARD_SIZE = FIELD_SIZE * FIELDS_IN_ROW;
+let BOARD_SIZE = FIELD_SIZE * FIELDS_IN_ROW;
+
+const SCALE_OF_BORDER = 0.08;
+let BORDER_WIDTH = FIELD_SIZE * SCALE_OF_BORDER;
 
 const TYPE_LIGHT = 0;
 const TYPE_DARK = 1;
@@ -16,6 +17,7 @@ const chessImage = loadImage("chess.png");
 // Mouse
 let mouseX = -1;
 let mouseY = -1;
+let boardBlocked = false;
 
 let mouseClicked = false;
 let choosenPiece = null;
@@ -31,30 +33,32 @@ let actions = [];
 let end = false;
 
 function init() {
-    canvas.width = BOARD_SIZE;
-    canvas.height = BOARD_SIZE;
+    setCanvasSize(BOARD_SIZE);
 
     // Mouse down/up events
     canvas.onmousedown = function() {
+        if(boardBlocked) return;
         mouseClicked = true;
     }
     canvas.onmouseup = function() {
+        if(boardBlocked) return;
         mouseClicked = false;
         mouseUp();
     }
     // Mouse moving event
     canvas.onmousemove = function(event) {
+        if(boardBlocked) return;
         mouseX = getMouseX(event);
         mouseY = getMouseY(event);
         if(end) return;
-
+        
         if(choosenPiece == null) {
             mouseMoveFirst();
         } else {
             mouseMovePiece();
         }
     }
-
+    
     canvas.onmouseleave = function() {
         mouseClicked = false;
         choosenPiece = null;
@@ -69,6 +73,15 @@ function init() {
 
     board = new Board();
     update();
+}
+
+function setCanvasSize(size) {
+    canvas.width = size;
+    canvas.height = size;
+
+    BOARD_SIZE = size;
+    FIELD_SIZE = BOARD_SIZE / FIELDS_IN_ROW;
+    BORDER_WIDTH = FIELD_SIZE * SCALE_OF_BORDER;
 }
 
 function mouseMovePiece() {
@@ -163,8 +176,8 @@ function renderField(x, y, colorIndex) {
     ctx.fillRect(X_POS, Y_POS, FIELD_SIZE, FIELD_SIZE);
 
     ctx.fillStyle = borderColor;
-    ctx.fillRect(X_POS, Y_POS, BORDER_SIZE, FIELD_SIZE);
-    ctx.fillRect(X_POS, Y_POS, FIELD_SIZE, BORDER_SIZE);
+    ctx.fillRect(X_POS, Y_POS, BORDER_WIDTH, FIELD_SIZE);
+    ctx.fillRect(X_POS, Y_POS, FIELD_SIZE, BORDER_WIDTH);
 }
 
 // Render field choosen to move to 
