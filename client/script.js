@@ -1,9 +1,19 @@
 const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
 
-let FIELD_SIZE = 90;
+// Containers
+const menuContent = document.getElementById("menu-content");
+const chessContent = document.getElementById("chess-content");
+
+// Buttons
+const oneBoardButton = document.getElementById("button-one-board");
+const playOnlineButton = document.getElementById("play-online-board");
+
+const GAME_BOARD_SIZE = 720;
+const MENU_BOARD_SIZE = 640;
+
+let BOARD_SIZE, FIELD_SIZE;
 const FIELDS_IN_ROW = 8;
-let BOARD_SIZE = FIELD_SIZE * FIELDS_IN_ROW;
 
 const SCALE_OF_BORDER = 0.08;
 let BORDER_WIDTH = FIELD_SIZE * SCALE_OF_BORDER;
@@ -33,7 +43,18 @@ let actions = [];
 let end = false;
 
 function init() {
-    setCanvasSize(BOARD_SIZE);
+    setCanvasSize(MENU_BOARD_SIZE);
+    oneBoardButton.onclick = startGame;
+
+    initColors();
+    initPieces();
+
+    board = new Board();
+    update();
+}
+
+function initGame() {
+    setCanvasSize(GAME_BOARD_SIZE);
 
     // Mouse down/up events
     canvas.onmousedown = function() {
@@ -67,12 +88,13 @@ function init() {
     canvas.oncontextmenu = function() {
         return false;
     }
-    
-    initColors();
-    initPieces();
+}
 
-    board = new Board();
-    update();
+function startGame() {
+    initGame();
+
+    chessContent.classList.remove("menu-div");
+    menuContent.remove();
 }
 
 function setCanvasSize(size) {

@@ -1,0 +1,23 @@
+
+
+button {
+    display: block;
+    cursor: var(--pointer);
+    padding: 7px;
+
+    background-color: var(--dark-color);
+    color: var(--font-color);
+    font: bold 50px var(--font-family);
+    
+    outline: none;
+    border: none;
+
+    border-left: solid var(--dark-color-2) 15px;
+    border-top: solid var(--dark-color-2) 15px;
+
+    box-shadow: 10px 10px 1px var(--light-color-2);
+}
+button:hover {
+    color: white;
+    box-shadow: 14px 14px 1px var(--light-color);
+}

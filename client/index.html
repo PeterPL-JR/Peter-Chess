@@ -4,14 +4,28 @@
     <meta charset="UTF-8">
     <title>Peter Chess</title>
     <link rel="stylesheet" href="styles/styles.css" type="text/css">
+    
+    <link rel="stylesheet" href="styles/logo-styles.css" type="text/css">
+    <link rel="stylesheet" href="styles/button-styles.css" type="text/css">
 
     <script src="scripts/functions.js"></script>
     <script src="scripts/graphics.js"></script>
 </head>
 <body onload="init();">
-    <div id="menu-content">
+    <div id="menu-content" class="menu-div">
+        <div id="logo">
+            <img id="logo-img" src="images/logo.png">
+            <div id="logo-div">
+                <div>Peter</div>
+                <div>Chess</div>
+            </div>
+            <div style="clear: both;"></div>
+        </div>
+
+        <button id="button-one-board">One Board</button><br>
+        <button id="play-online-board">Play Online</button>
     </div>
-    <div id="chess-content">
+    <div id="chess-content" class="menu-div">
         <canvas></canvas>
     </div>
     

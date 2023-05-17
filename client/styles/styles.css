@@ -1,6 +1,20 @@
 :root {
     --default: url("../images/cursor_default.png"), auto;
     --pointer: url("../images/cursor_pointer.png"), auto;
+
+    --font-color: #e8ddc8;
+    --font-family: 'Verdana';
+
+    --light-color: #ae9662;
+    --light-color-2: #978255;
+
+    --dark-color: #6b3715;
+    --dark-color-2: #3b1e0d;
+}
+
+@font-face {
+    font-family: "Pixel-Font";
+    src: url("../pixel-font.ttf");
 }
 
 body {
@@ -11,7 +25,6 @@ body {
     background-size: cover;
     background-attachment: fixed;
 
-    margin-top: 60px;
     text-align: center;
 }
 html {
@@ -20,9 +33,29 @@ html {
 canvas {
     background-color: #121212;
     box-shadow: 45px 45px 80px black;
+    margin-top: 80px;
 }
 
-#menu-content {
+.menu-div {
+    width: 50%;
+    float: left;
 }
-#chess-content {
+.menu-div canvas {
+    display: block;
+}
+
+.menu-div:nth-child(1) > *{
+    margin-right: 60px;
+    margin-left: auto;
+}
+.menu-div:nth-child(2) > *{
+    margin-left: 60px;
+    margin-right: auto;
+}
+
+#menu-content button {
+    width: 450px;
+
+    margin-bottom: 8px;
+    margin-right: 140px !important;
 }
