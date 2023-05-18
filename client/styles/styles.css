@@ -59,3 +59,22 @@ canvas {
     margin-bottom: 8px;
     margin-right: 140px !important;
 }
+
+#user-icon {
+    position: fixed;
+    top: 0px;
+    right: 0px;
+
+    margin: 20px;
+    width: 80px;
+
+    background-color: var(--dark-color);
+    border-radius: 50%;
+    border: solid  var(--dark-color-2) 4px;
+    transition: 0.1s;
+}
+#user-icon:hover {
+    cursor: var(--pointer);
+    width: 90px;
+    transition: 0.1s;
+}

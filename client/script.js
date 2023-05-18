@@ -8,6 +8,7 @@ const chessContent = document.getElementById("chess-content");
 // Buttons
 const oneBoardButton = document.getElementById("button-one-board");
 const playOnlineButton = document.getElementById("play-online-board");
+const userIcon = document.getElementById("user-icon");
 
 const GAME_BOARD_SIZE = 720;
 const MENU_BOARD_SIZE = 640;
@@ -45,6 +46,13 @@ let end = false;
 function init() {
     setCanvasSize(MENU_BOARD_SIZE);
     oneBoardButton.onclick = startGame;
+
+    userIcon.onmouseenter = function() {
+        userIcon.src = "images/user_icon_hover.png";
+    }
+    userIcon.onmouseleave = function() {
+        userIcon.src = "images/user_icon.png";
+    }
 
     initColors();
     initPieces();
@@ -95,6 +103,7 @@ function startGame() {
 
     chessContent.classList.remove("menu-div");
     menuContent.remove();
+    userIcon.style.display = "none";
 }
 
 function setCanvasSize(size) {
