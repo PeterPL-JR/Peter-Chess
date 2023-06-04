@@ -15,6 +15,11 @@ app.use(express.static(
     path.join(__dirname + "/client/")
 ));
 
+io.on("connection", function(socket) {
+    socket.on("join-game", function(data) {
+    });
+});
+
 // Server listens on PORT
 server.listen(PORT, function() {
     console.log("Listening on port " + PORT)

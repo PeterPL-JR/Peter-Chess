@@ -1,0 +1,26 @@
+input {
+    border: none;
+    outline: none;
+    
+    background-color: var(--dark-color-2);
+    color: white;
+    font: bold 42px 'Verdana';
+    text-align: center;
+
+    padding: 3px;
+    margin: 15px;
+
+    border-left: solid #0b0602 12px;
+    border-top: solid #0b0602 12px;
+}
+input::placeholder {
+    font-size: 38px;
+}
+
+input::-webkit-inner-spin-button, input::-webkit-outer-spin-button {
+    appearance: none;
+    margin: 0px;
+}
+input[type="number"] {
+    appearance: textfield;
+}

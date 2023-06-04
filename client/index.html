@@ -7,9 +7,12 @@
     
     <link rel="stylesheet" href="styles/logo-styles.css" type="text/css">
     <link rel="stylesheet" href="styles/button-styles.css" type="text/css">
+    <link rel="stylesheet" href="styles/input-styles.css" type="text/css">
 
     <script src="scripts/functions.js"></script>
     <script src="scripts/graphics.js"></script>
+    
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 <body onload="init();">
     <div id="menu-content" class="menu-div">
@@ -22,8 +25,15 @@
             <div style="clear: both;"></div>
         </div>
 
-        <button id="button-one-board">One Board</button><br>
-        <button id="play-online-board">Play Online</button>
+        <div id="buttons-div">
+            <button id="button-one-board">One Board</button><br>
+            <button id="play-online-board">Play Online</button>
+        </div>
+        <div id="join-div">
+            <p id="desc">Game code</p>
+            <input type="number" id="code-input">
+            <button id="join-button">Dołącz</button>
+        </div>
     </div>
     <div id="chess-content" class="menu-div">
         <canvas></canvas>
@@ -31,6 +41,7 @@
     <img src="images/user_icon.png" id="user-icon">
     
     <script src="script.js"></script>
+    <script src="menu.js"></script>
     
     <script src="board.js"></script>
     <script src="piece.js"></script>

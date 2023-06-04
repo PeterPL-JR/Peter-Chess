@@ -54,10 +54,64 @@ canvas {
 }
 
 #menu-content button {
-    width: 450px;
-
+    width: 100%;
     margin-bottom: 8px;
-    margin-right: 140px !important;
+}
+#buttons-div {
+    width: 450px;
+    margin-right: 140px;
+}
+#join-div {
+    width: 500px;
+    display: none;
+
+    background: linear-gradient(to right bottom, var(--dark-color), #47240f);
+    text-align: center;
+    
+    padding-top: 8px;
+    padding-bottom: 8px;
+    margin-right: 105px;
+
+    border-left: solid var(--dark-color-2) 25px;
+    border-top: solid var(--dark-color-2) 25px;
+
+    box-shadow: 20px 20px var(--light-color);
+}
+#join-div p#desc {
+    width: max-content;
+    margin: auto;
+    padding: 5px;
+    padding-left: 15px;
+    padding-right: 15px;
+
+    margin-top: -40px;
+    margin-bottom: 20px;
+
+    color: white;
+    font: bold 40px 'Verdana';
+
+    background-color: var(--light-color-2);
+
+    border-left: solid var(--light-color) 10px;
+    border-top: solid var(--light-color) 10px;
+}
+
+input#code-input {
+    width: 80%;
+    margin-bottom: 30px;
+}
+button#join-button {
+    width: 210px;
+    font-size: 35px;
+    border-width: 10px;
+    padding: 4px;
+    margin-bottom: 20px;
+
+    margin-left: auto;
+    margin-right: auto;
+}
+button#join-button:hover {
+    box-shadow: 12px 12px 1px var(--light-color);
 }
 
 #user-icon {
