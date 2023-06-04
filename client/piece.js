@@ -36,7 +36,8 @@ class Piece {
         this.type = typeIndex;
         this.color = colorIndex;
         this.board = board;
-        
+        this.id = Piece.createID(this.color, this.type, beginY);
+
         this.x = beginX;
         this.y = beginY;
         this.alreadyMoved = false;
@@ -110,6 +111,9 @@ class Piece {
     }
     isOfType(typeIndex) {
         return this.type == typeIndex;
+    }
+    static createID(color, typeIndex, posY) {
+        return `${color}${typeIndex}${posY}`;
     }
 }
 

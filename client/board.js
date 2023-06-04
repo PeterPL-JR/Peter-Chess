@@ -164,6 +164,15 @@ class Board {
             return piece.type == _KING && piece.color == color;
         });
     }
+
+    // Method that returns array of pieces IDs
+    getPiecesIDs() {
+        let ids = [];
+        for(let piece of this.pieces) {
+            ids.push(piece.id);
+        }
+        return ids;
+    }
 }
 
 // Function checking if a king is safe after every move

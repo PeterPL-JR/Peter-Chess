@@ -43,7 +43,13 @@ function joinMenu() {
 
 function clickJoinGame() {
     let gameCode = parseInt(gameCodeInput.value);
+    let piecesIDs = board.getPiecesIDs();
     
     socket = io();
-    socket.emit("join-game", {gameCode});
+    socket.emit("join-game", {gameCode, board: piecesIDs});
+    
+    socket.on("join-game", function(data) {
+        playerCode = data.playerCode;
+        startGame();
+    });
 }
